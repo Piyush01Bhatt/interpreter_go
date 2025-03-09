@@ -2,6 +2,8 @@ package scanner
 
 import (
 	"log"
+	"strconv"
+	"unicode"
 
 	u "github.com/Piyush01Bhatt/interpreter_go/internal/utils"
 )
@@ -107,7 +109,11 @@ func (t TokenType) String() string {
 }
 
 func (t *Token) String() string {
-	return t.Type.String() + " " + t.Lexeme + " " + t.Literal.(string)
+	literalStr := "<nil>"
+	if str, ok := t.Literal.(string); ok {
+		literalStr = str
+	}
+	return t.Type.String() + " " + t.Lexeme + " " + literalStr
 }
 
 func (ls *LexScanner) ScanTokens() []Token {
@@ -156,7 +162,25 @@ func (ls *LexScanner) scan() {
 		ls.addToken(u.Ternary(ls.match('='), GREATER_EQUAL, GREATER), nil)
 	case '<':
 		ls.addToken(u.Ternary(ls.match('='), LESS_EQUAL, LESS), nil)
+	case '/':
+		if ls.match('=') {
+			for ls.peek() != '\n' && !ls.isAtEnd() {
+				ls.advance()
+			}
+		} else {
+			ls.addToken(SLASH, nil)
+		}
+	case ' ', '\r', '\t':
+		// Ignore whitespace
+	case '\n':
+		ls.line++
+	case '"':
+		ls.readString()
 	default:
+		if unicode.IsDigit(rune(ch)) {
+			ls.readNumber()
+			return
+		}
 		log.Fatalf("unexpected character at line: %d", ls.line)
 	}
 }
@@ -187,4 +211,50 @@ func (ls *LexScanner) addToken(tokenType TokenType, literal any) {
 		Line:    ls.line,
 	}
 	ls.tokens = append(ls.tokens, token)
+}
+
+func (ls *LexScanner) peek() byte {
+	if ls.isAtEnd() {
+		return '0'
+	}
+	return ls.source[ls.current]
+}
+
+func (ls *LexScanner) peekNext() byte {
+	next := ls.current + 1
+	if next >= len(ls.source) {
+		return '0'
+	}
+	return ls.source[next]
+}
+
+func (ls *LexScanner) readString() {
+	for ls.peek() != '"' && !ls.isAtEnd() {
+		if ls.peek() == '\n' {
+			ls.line++
+		}
+		ls.advance()
+	}
+	if ls.isAtEnd() {
+		log.Fatalf("Unterminated string at line: %d", ls.line)
+		return
+	}
+	ls.advance()
+	value := ls.source[ls.start+1 : ls.current-1]
+	ls.addToken(STRING, value)
+}
+
+func (ls *LexScanner) readNumber() {
+	for unicode.IsDigit(rune(ls.peek())) {
+		ls.advance()
+	}
+	if ls.peek() == '.' && unicode.IsDigit(rune(ls.peekNext())) {
+		ls.advance()
+		for unicode.IsDigit(rune(ls.peek())) {
+			ls.advance()
+		}
+	}
+	lexeme := ls.source[ls.start:ls.current]
+	value, _ := strconv.ParseFloat(lexeme, 64)
+	ls.addToken(NUMBER, value)
 }

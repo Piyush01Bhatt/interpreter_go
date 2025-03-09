@@ -4,7 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
+
+	ls "github.com/Piyush01Bhatt/interpreter_go/internal/scanner"
 )
 
 func runFile(filePath string) {
@@ -34,13 +35,15 @@ func runPrompt() {
 			continue
 		}
 
-		input = strings.TrimSpace(input) // Remove newlines/spaces
-		if input == "exit" {             // Exit condition
+		// input = strings.TrimSpace(input) // Remove newlines/spaces
+		if input == "exit" { // Exit condition
 			fmt.Println("Goodbye!")
 			break
 		}
 
-		fmt.Println("You entered:", input) // Echo back input
+		// fmt.Println("You entered:", input) // Echo back input
+		lexScanner := ls.NewLexScanner(input)
+		fmt.Println(lexScanner.ScanTokens())
 	}
 }
 
