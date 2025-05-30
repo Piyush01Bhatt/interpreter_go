@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	psr "github.com/Piyush01Bhatt/interpreter_go/internal/parser"
 	ls "github.com/Piyush01Bhatt/interpreter_go/internal/scanner"
 )
 
@@ -52,6 +53,9 @@ func main() {
 	fmt.Println("This is the main function")
 	args := os.Args[1:]
 	fmt.Println(args)
+
+	binaryExp := psr.TestBinary()
+	fmt.Println(binaryExp)
 
 	if len(args) > 1 {
 		fmt.Println("(Usage: jlox [script])")
