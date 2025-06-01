@@ -168,7 +168,7 @@ func (p *Parser) match(tokens ...ls.TokenType) bool {
 
 func (p *Parser) advance() ls.Token {
 	if !p.isAtEnd() {
-		p.advance()
+		p.current++
 	}
 	return p.previous()
 }
