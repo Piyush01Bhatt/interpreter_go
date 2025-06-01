@@ -50,6 +50,8 @@ func runPrompt() {
 		parser := psr.NewParser(lexScanner.ScanTokens())
 		ast := parser.ParseExpression()
 		fmt.Println(ast)
+		result := ast.Evaluate()
+		fmt.Println(result)
 	}
 }
 
