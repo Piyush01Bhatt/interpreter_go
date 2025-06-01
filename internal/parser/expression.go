@@ -72,7 +72,7 @@ func (b *Binary) String() string {
 	return fmt.Sprintf("(%s %s %s)", b.left, b.operator.Lexeme, b.right)
 }
 
-func TestBinary() *Binary {
+func TestBinary() Expr {
 	binaryExp := Binary{
 		left: &Unary{
 			operator: &ls.Token{
