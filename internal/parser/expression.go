@@ -72,6 +72,10 @@ func (v Value) IsNumber() bool {
 	return v.IntVal != nil || v.FloatVal != nil
 }
 
+func (v Value) IsString() bool {
+	return v.StrVal != nil
+}
+
 func (v Value) ToFloat64() float64 {
 	if v.FloatVal != nil {
 		return *v.FloatVal
@@ -86,6 +90,14 @@ func (v Value) ToFloat64() float64 {
 		return 0.0
 	}
 	panic("Not a numeric value")
+}
+
+func (v Value) IsBool() bool {
+	return v.BoolVal != nil
+}
+
+func (v Value) IsNil() bool {
+	return v.StrVal == nil && v.IntVal == nil && v.FloatVal == nil && v.BoolVal == nil
 }
 
 func (v Value) IsTruthy() bool {
@@ -127,22 +139,64 @@ func (b *Binary) Evaluate() *Value {
 	left := b.left.Evaluate()
 	right := b.right.Evaluate()
 
-	if !left.IsNumber() || !right.IsNumber() {
-		panic("Type mismatch")
-	}
-
-	leftVal := left.ToFloat64()
-	rightVal := right.ToFloat64()
-
 	switch b.operator.Type {
 	case ls.MINUS:
-		return NewFloatValue(leftVal - rightVal)
+		if !left.IsNumber() || !right.IsNumber() {
+			panic("Type mismatch")
+		}
+		return NewFloatValue(left.ToFloat64() - right.ToFloat64())
 	case ls.SLASH:
-		return NewFloatValue(leftVal / rightVal)
+		if !left.IsNumber() || !right.IsNumber() {
+			panic("Type mismatch")
+		}
+		return NewFloatValue(left.ToFloat64() / right.ToFloat64())
 	case ls.STAR:
-		return NewFloatValue(leftVal * rightVal)
+		if !left.IsNumber() || !right.IsNumber() {
+			panic("Type mismatch")
+		}
+		return NewFloatValue(left.ToFloat64() * right.ToFloat64())
 	case ls.PLUS:
-		return NewFloatValue(leftVal + rightVal)
+		if left.IsNumber() && right.IsNumber() {
+			return NewFloatValue(left.ToFloat64() + right.ToFloat64())
+		}
+		if left.IsString() && right.IsString() {
+			return NewStringValue(*left.StrVal + *right.StrVal)
+		}
+		panic("Type mismatch")
+	case ls.GREATER:
+		if !left.IsNumber() || !right.IsNumber() {
+			panic("Type mismatch")
+		}
+		return NewBoolValue(left.ToFloat64() > right.ToFloat64())
+	case ls.GREATER_EQUAL:
+		if !left.IsNumber() || !right.IsNumber() {
+			panic("Type mismatch")
+		}
+		return NewBoolValue(left.ToFloat64() >= right.ToFloat64())
+	case ls.LESS:
+		if !left.IsNumber() || !right.IsNumber() {
+			panic("Type mismatch")
+		}
+		return NewBoolValue(left.ToFloat64() < right.ToFloat64())
+	case ls.LESS_EQUAL:
+		if !left.IsNumber() || !right.IsNumber() {
+			panic("Type mismatch")
+		}
+		return NewBoolValue(left.ToFloat64() <= right.ToFloat64())
+	case ls.EQUAL_EQUAL:
+		if left.IsNumber() && right.IsNumber() {
+			return NewBoolValue(left.ToFloat64() == right.ToFloat64())
+		}
+		if left.IsString() && right.IsString() {
+			return NewBoolValue(*left.StrVal == *right.StrVal)
+		}
+		if left.IsBool() && right.IsBool() {
+			return NewBoolValue(*left.BoolVal == *right.BoolVal)
+		}
+		if left.IsNil() && right.IsNil() {
+			return NewBoolValue(true)
+		}
+		panic("Type mismatch")
 	}
 
 	return nil
@@ -194,11 +248,9 @@ func (u *Unary) Evaluate() *Value {
 		panic("Type mismatch")
 	}
 
-	rightVal := right.ToFloat64()
-
 	switch op {
 	case ls.MINUS:
-		return NewFloatValue(-rightVal)
+		return NewFloatValue(-right.ToFloat64())
 	case ls.BANG:
 		return NewBoolValue(!right.IsTruthy())
 	}
