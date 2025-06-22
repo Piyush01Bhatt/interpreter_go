@@ -45,23 +45,22 @@ func runPrompt() {
 
 		fmt.Println("You entered:", input) // Echo back input
 		lexScanner := ls.NewLexScanner(input)
-		fmt.Println(lexScanner.ScanTokens())
+		tokens := lexScanner.ScanTokens()
+		fmt.Println(tokens)
 
-		parser := psr.NewParser(lexScanner.ScanTokens())
-		ast := parser.ParseExpression()
-		fmt.Println(ast)
-		result := ast.Evaluate()
-		fmt.Println(result)
+		parser := psr.NewParser(tokens)
+		statements := parser.Parse()
+		fmt.Println(statements)
+		for _, stmt := range statements {
+			result := stmt.Execute()
+			fmt.Println(result)
+		}
 	}
 }
 
 func main() {
 	fmt.Println("This is the main function")
 	args := os.Args[1:]
-	fmt.Println(args)
-
-	binaryExp := psr.TestBinary()
-	fmt.Println(binaryExp)
 
 	if len(args) > 1 {
 		fmt.Println("(Usage: jlox [script])")

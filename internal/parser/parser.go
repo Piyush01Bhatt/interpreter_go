@@ -30,6 +30,48 @@ func NewParser(tokens []ls.Token) *Parser {
 	}
 }
 
+func (p *Parser) Parse() []Stmt {
+	var stmts []Stmt
+	for !p.isAtEnd() {
+		stmt := p.declaration()
+		stmts = append(stmts, stmt)
+	}
+	return stmts
+}
+
+func (p *Parser) declaration() Stmt {
+	return p.statement()
+}
+
+func (p *Parser) statement() Stmt {
+	if p.match(ls.PRINT) {
+		return p.printStatement()
+	}
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() Stmt {
+	expr := p.ParseExpression()
+	_, err := p.consume(ls.SEMICOLON, "expect ';' after expression")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &PrintStmt{
+		expr: expr,
+	}
+}
+
+func (p *Parser) expressionStatement() Stmt {
+	expr := p.ParseExpression()
+	_, err := p.consume(ls.SEMICOLON, "expect ';' after expression")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &ExpressionStmt{
+		expr: expr,
+	}
+}
+
 func (p *Parser) ParseExpression() Expr {
 	return p.expression()
 }
@@ -105,16 +147,15 @@ func (p *Parser) factor() Expr {
 //
 //	| primary
 func (p *Parser) unary() Expr {
-	expr := p.primary()
 	if p.match(ls.BANG, ls.MINUS) {
 		operator := p.previous()
-		right := p.primary()
-		expr = &Unary{
+		right := p.unary()
+		return &Unary{
 			operator: &operator,
 			right:    right,
 		}
 	}
-	return expr
+	return p.primary()
 }
 
 // primary  → NUMBER | STRING | "true" | "false" | "nil"
