@@ -124,13 +124,20 @@ func (v Value) IsTruthy() bool {
 type Expr interface {
 	Type() ExprType
 	String() string
-	Evaluate() *Value
+	Accept(visitor ExprVisitor) *Value
+}
+
+type ExprVisitor interface {
+	VisitBinary(binary *Binary) *Value
+	VisitUnary(unary *Unary) *Value
+	VisitLiteral(literal *Literal) *Value
+	VisitVariable(variable *Variable) *Value
 }
 
 type Binary struct {
-	left     Expr
-	operator *ls.Token
-	right    Expr
+	Left     Expr
+	Operator *ls.Token
+	Right    Expr
 }
 
 func (b *Binary) Type() ExprType {
@@ -138,105 +145,16 @@ func (b *Binary) Type() ExprType {
 }
 
 func (b *Binary) String() string {
-	return fmt.Sprintf("(%s %s %s)", b.left, b.operator.Lexeme, b.right)
+	return fmt.Sprintf("(%s %s %s)", b.Left, b.Operator.Lexeme, b.Right)
 }
 
-func (b *Binary) Evaluate() *Value {
-	left := b.left.Evaluate()
-	right := b.right.Evaluate()
-
-	switch b.operator.Type {
-	case ls.MINUS:
-		if !left.IsNumber() || !right.IsNumber() {
-			panic("Type mismatch")
-		}
-		return NewFloatValue(left.ToFloat64() - right.ToFloat64())
-	case ls.SLASH:
-		if !left.IsNumber() || !right.IsNumber() {
-			panic("Type mismatch")
-		}
-		return NewFloatValue(left.ToFloat64() / right.ToFloat64())
-	case ls.STAR:
-		if !left.IsNumber() || !right.IsNumber() {
-			panic("Type mismatch")
-		}
-		return NewFloatValue(left.ToFloat64() * right.ToFloat64())
-	case ls.PLUS:
-		if left.IsNumber() && right.IsNumber() {
-			return NewFloatValue(left.ToFloat64() + right.ToFloat64())
-		}
-		if left.IsString() && right.IsString() {
-			return NewStringValue(*left.StrVal + *right.StrVal)
-		}
-		panic("Type mismatch")
-	case ls.GREATER:
-		if !left.IsNumber() || !right.IsNumber() {
-			panic("Type mismatch")
-		}
-		return NewBoolValue(left.ToFloat64() > right.ToFloat64())
-	case ls.GREATER_EQUAL:
-		if !left.IsNumber() || !right.IsNumber() {
-			panic("Type mismatch")
-		}
-		return NewBoolValue(left.ToFloat64() >= right.ToFloat64())
-	case ls.LESS:
-		if !left.IsNumber() || !right.IsNumber() {
-			panic("Type mismatch")
-		}
-		return NewBoolValue(left.ToFloat64() < right.ToFloat64())
-	case ls.LESS_EQUAL:
-		if !left.IsNumber() || !right.IsNumber() {
-			panic("Type mismatch")
-		}
-		return NewBoolValue(left.ToFloat64() <= right.ToFloat64())
-	case ls.EQUAL_EQUAL:
-		if left.IsNumber() && right.IsNumber() {
-			return NewBoolValue(left.ToFloat64() == right.ToFloat64())
-		}
-		if left.IsString() && right.IsString() {
-			return NewBoolValue(*left.StrVal == *right.StrVal)
-		}
-		if left.IsBool() && right.IsBool() {
-			return NewBoolValue(*left.BoolVal == *right.BoolVal)
-		}
-		if left.IsNil() && right.IsNil() {
-			return NewBoolValue(true)
-		}
-		panic("Type mismatch")
-	}
-
-	return nil
-}
-
-func TestBinary() Expr {
-	binaryExp := Binary{
-		left: &Unary{
-			operator: &ls.Token{
-				Type:    ls.MINUS,
-				Lexeme:  "-",
-				Literal: "-",
-				Line:    0,
-			},
-			right: &Literal{
-				value: NewIntValue(123),
-			},
-		},
-		operator: &ls.Token{
-			Type:    ls.STAR,
-			Lexeme:  "*",
-			Literal: "*",
-			Line:    0,
-		},
-		right: &Literal{
-			value: NewIntValue(15),
-		},
-	}
-	return &binaryExp
+func (b *Binary) Accept(visitor ExprVisitor) *Value {
+	return visitor.VisitBinary(b)
 }
 
 type Unary struct {
-	operator *ls.Token
-	right    Expr
+	Operator *ls.Token
+	Right    Expr
 }
 
 func (*Unary) Type() ExprType {
@@ -244,28 +162,15 @@ func (*Unary) Type() ExprType {
 }
 
 func (u *Unary) String() string {
-	return fmt.Sprintf("(%s %s)", u.operator.Lexeme, u.right)
+	return fmt.Sprintf("(%s %s)", u.Operator.Lexeme, u.Right)
 }
 
-func (u *Unary) Evaluate() *Value {
-	right := u.right.Evaluate()
-	op := u.operator.Type
-	if op == ls.MINUS && !right.IsNumber() {
-		panic("Type mismatch")
-	}
-
-	switch op {
-	case ls.MINUS:
-		return NewFloatValue(-right.ToFloat64())
-	case ls.BANG:
-		return NewBoolValue(!right.IsTruthy())
-	}
-
-	return nil
+func (u *Unary) Accept(visitor ExprVisitor) *Value {
+	return visitor.VisitUnary(u)
 }
 
 type Literal struct {
-	value *Value
+	Value *Value
 }
 
 func (l *Literal) Type() ExprType {
@@ -273,15 +178,15 @@ func (l *Literal) Type() ExprType {
 }
 
 func (l *Literal) String() string {
-	return l.value.String()
+	return l.Value.String()
 }
 
-func (l *Literal) Evaluate() *Value {
-	return l.value
+func (l *Literal) Accept(visitor ExprVisitor) *Value {
+	return visitor.VisitLiteral(l)
 }
 
 type Variable struct {
-	name string
+	Name string
 }
 
 func (v *Variable) Type() ExprType {
@@ -289,9 +194,9 @@ func (v *Variable) Type() ExprType {
 }
 
 func (v *Variable) String() string {
-	return v.name
+	return v.Name
 }
 
-func (v *Variable) Evaluate() *Value {
-	return NewStringValue(v.name)
+func (v *Variable) Accept(visitor ExprVisitor) *Value {
+	return visitor.VisitVariable(v)
 }

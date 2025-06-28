@@ -79,8 +79,8 @@ func (p *Parser) varDeclaration() Stmt {
 	}
 
 	return &VarStmt{
-		name: &name,
-		expr: initializer,
+		Name: &name,
+		Expr: initializer,
 	}
 }
 
@@ -91,7 +91,7 @@ func (p *Parser) printStatement() Stmt {
 		log.Fatal(err)
 	}
 	return &PrintStmt{
-		expr: expr,
+		Expr: expr,
 	}
 }
 
@@ -102,7 +102,7 @@ func (p *Parser) expressionStatement() Stmt {
 		log.Fatal(err)
 	}
 	return &ExpressionStmt{
-		expr: expr,
+		Expr: expr,
 	}
 }
 
@@ -124,9 +124,9 @@ func (p *Parser) equality() Expr {
 		operator := p.previous()
 		right := p.comparison()
 		expr = &Binary{
-			left:     expr,
-			operator: &operator,
-			right:    right,
+			Left:     expr,
+			Operator: &operator,
+			Right:    right,
 		}
 	}
 	return expr
@@ -139,9 +139,9 @@ func (p *Parser) comparison() Expr {
 		operator := p.previous()
 		right := p.term()
 		expr = &Binary{
-			left:     expr,
-			operator: &operator,
-			right:    right,
+			Left:     expr,
+			Operator: &operator,
+			Right:    right,
 		}
 	}
 	return expr
@@ -154,9 +154,9 @@ func (p *Parser) term() Expr {
 		operator := p.previous()
 		right := p.factor()
 		expr = &Binary{
-			left:     expr,
-			operator: &operator,
-			right:    right,
+			Left:     expr,
+			Operator: &operator,
+			Right:    right,
 		}
 	}
 	return expr
@@ -169,9 +169,9 @@ func (p *Parser) factor() Expr {
 		operator := p.previous()
 		right := p.unary()
 		expr = &Binary{
-			left:     expr,
-			operator: &operator,
-			right:    right,
+			Left:     expr,
+			Operator: &operator,
+			Right:    right,
 		}
 	}
 	return expr
@@ -185,8 +185,8 @@ func (p *Parser) unary() Expr {
 		operator := p.previous()
 		right := p.unary()
 		return &Unary{
-			operator: &operator,
-			right:    right,
+			Operator: &operator,
+			Right:    right,
 		}
 	}
 	return p.primary()
@@ -212,13 +212,13 @@ func (p *Parser) primary() Expr {
 			value = nil
 		}
 		return &Literal{
-			value: value,
+			Value: value,
 		}
 	}
 
 	if p.match(ls.IDENTIFIER) {
 		return &Variable{
-			name: p.previous().Lexeme,
+			Name: p.previous().Lexeme,
 		}
 	}
 
