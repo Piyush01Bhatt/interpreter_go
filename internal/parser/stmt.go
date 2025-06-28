@@ -17,11 +17,17 @@ const (
 type Stmt interface {
 	Type() StmtType
 	String() string
-	Execute() *Value
+	Accept(visitor StmtVisitor) *Value
+}
+
+type StmtVisitor interface {
+	VisitExpressionStmt(stmt *ExpressionStmt) *Value
+	VisitPrintStmt(stmt *PrintStmt) *Value
+	VisitVarStmt(stmt *VarStmt) *Value
 }
 
 type ExpressionStmt struct {
-	expr Expr
+	Expr Expr
 }
 
 func (es *ExpressionStmt) Type() StmtType {
@@ -29,15 +35,15 @@ func (es *ExpressionStmt) Type() StmtType {
 }
 
 func (es *ExpressionStmt) String() string {
-	return fmt.Sprintf("ExpressionStmt: %s", es.expr.String())
+	return fmt.Sprintf("ExpressionStmt: %s", es.Expr.String())
 }
 
-func (es *ExpressionStmt) Execute() *Value {
-	return es.expr.Evaluate()
+func (es *ExpressionStmt) Accept(visitor StmtVisitor) *Value {
+	return visitor.VisitExpressionStmt(es)
 }
 
 type PrintStmt struct {
-	expr Expr
+	Expr Expr
 }
 
 func (ps *PrintStmt) Type() StmtType {
@@ -45,16 +51,16 @@ func (ps *PrintStmt) Type() StmtType {
 }
 
 func (ps *PrintStmt) String() string {
-	return fmt.Sprintf("PrintStmt: %s", ps.expr.String())
+	return fmt.Sprintf("PrintStmt: %s", ps.Expr.String())
 }
 
-func (ps *PrintStmt) Execute() *Value {
-	return ps.expr.Evaluate()
+func (ps *PrintStmt) Accept(visitor StmtVisitor) *Value {
+	return visitor.VisitPrintStmt(ps)
 }
 
 type VarStmt struct {
-	name *ls.Token
-	expr Expr
+	Name *ls.Token
+	Expr Expr
 }
 
 func (vs *VarStmt) Type() StmtType {
@@ -63,15 +69,12 @@ func (vs *VarStmt) Type() StmtType {
 
 func (vs *VarStmt) String() string {
 	exprStr := "nil"
-	if vs.expr != nil {
-		exprStr = vs.expr.String()
+	if vs.Expr != nil {
+		exprStr = vs.Expr.String()
 	}
-	return fmt.Sprintf("VarStmt: %s = %s", vs.name.Lexeme, exprStr)
+	return fmt.Sprintf("VarStmt: %s = %s", vs.Name.Lexeme, exprStr)
 }
 
-func (vs *VarStmt) Execute() *Value {
-	if vs.expr == nil {
-		return NewNilValue()
-	}
-	return vs.expr.Evaluate()
+func (vs *VarStmt) Accept(visitor StmtVisitor) *Value {
+	return visitor.VisitVarStmt(vs)
 }

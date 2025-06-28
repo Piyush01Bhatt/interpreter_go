@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	i "github.com/Piyush01Bhatt/interpreter_go/internal/interpreter"
 	psr "github.com/Piyush01Bhatt/interpreter_go/internal/parser"
 	ls "github.com/Piyush01Bhatt/interpreter_go/internal/scanner"
 )
@@ -29,6 +30,7 @@ func runFile(filePath string) {
 
 func runPrompt() {
 	reader := bufio.NewReader(os.Stdin)
+	interpreter := i.NewInterpreter(i.ModePrompt)
 	for {
 		fmt.Print(">> ")                      // Display prompt
 		input, err := reader.ReadString('\n') // Read input until Enter (newline)
@@ -43,20 +45,13 @@ func runPrompt() {
 			break
 		}
 
-		fmt.Println("You entered:", input) // Echo back input
 		lexScanner := ls.NewLexScanner(input)
 		tokens := lexScanner.ScanTokens()
-		fmt.Println(tokens)
 
 		parser := psr.NewParser(tokens)
 		statements := parser.Parse()
-		fmt.Println(statements)
-		for _, stmt := range statements {
-			result := stmt.Execute()
-			if stmt.Type() != psr.VAR_STMT {
-				fmt.Println(result)
-			}
-		}
+
+		interpreter.Interpret(statements)
 	}
 }
 
