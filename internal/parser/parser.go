@@ -8,6 +8,13 @@ import (
 )
 
 // Grammar to parse
+// program        → declaration* EOF
+// declaration    → classDecl | funDecl | varDecl | statement
+// classDecl      → "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}"
+// funDecl        → "fun" function
+// varDecl        → "var" IDENTIFIER ( "=" expression )? ";"
+// statement      → exprStmt | ifStmt | printStmt | returnStmt | whileStmt | block
+// exprStmt       → expression ";"
 // expression     → equality
 // equality       → comparison ( ( "!=" | "==" ) comparison )*
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )*
@@ -17,6 +24,7 @@ import (
 //                | primary
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
 //                | "(" expression ")"
+//                | IDENTIFIER
 
 type Parser struct {
 	tokens  []ls.Token
@@ -40,6 +48,9 @@ func (p *Parser) Parse() []Stmt {
 }
 
 func (p *Parser) declaration() Stmt {
+	if p.match(ls.VAR) {
+		return p.varDeclaration()
+	}
 	return p.statement()
 }
 
@@ -48,6 +59,29 @@ func (p *Parser) statement() Stmt {
 		return p.printStatement()
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) varDeclaration() Stmt {
+	name, err := p.consume(ls.IDENTIFIER, "expect variable name")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var initializer Expr
+
+	if p.match(ls.EQUAL) {
+		initializer = p.ParseExpression()
+	}
+
+	_, err = p.consume(ls.SEMICOLON, "expect ';' after expression")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return &VarStmt{
+		name: &name,
+		expr: initializer,
+	}
 }
 
 func (p *Parser) printStatement() Stmt {
@@ -179,6 +213,12 @@ func (p *Parser) primary() Expr {
 		}
 		return &Literal{
 			value: value,
+		}
+	}
+
+	if p.match(ls.IDENTIFIER) {
+		return &Variable{
+			name: p.previous().Lexeme,
 		}
 	}
 
