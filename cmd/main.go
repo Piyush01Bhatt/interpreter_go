@@ -53,7 +53,9 @@ func runPrompt() {
 		fmt.Println(statements)
 		for _, stmt := range statements {
 			result := stmt.Execute()
-			fmt.Println(result)
+			if stmt.Type() != psr.VAR_STMT {
+				fmt.Println(result)
+			}
 		}
 	}
 }

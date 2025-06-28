@@ -13,6 +13,7 @@ const (
 	BINARY ExprType = iota
 	UNARY
 	LITERAL
+	VARIABLE
 )
 
 type Value struct {
@@ -20,6 +21,7 @@ type Value struct {
 	IntVal   *int
 	FloatVal *float64
 	BoolVal  *bool
+	NilVal   *struct{}
 }
 
 func NewStringValue(s string) *Value {
@@ -36,6 +38,10 @@ func NewFloatValue(f float64) *Value {
 
 func NewBoolValue(b bool) *Value {
 	return &Value{BoolVal: &b}
+}
+
+func NewNilValue() *Value {
+	return &Value{NilVal: &struct{}{}}
 }
 
 func (v *Value) String() string {
@@ -272,4 +278,20 @@ func (l *Literal) String() string {
 
 func (l *Literal) Evaluate() *Value {
 	return l.value
+}
+
+type Variable struct {
+	name string
+}
+
+func (v *Variable) Type() ExprType {
+	return VARIABLE
+}
+
+func (v *Variable) String() string {
+	return v.name
+}
+
+func (v *Variable) Evaluate() *Value {
+	return NewStringValue(v.name)
 }
