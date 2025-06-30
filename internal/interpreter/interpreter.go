@@ -52,6 +52,12 @@ func (i *Interpreter) VisitVariable(expr *parser.Variable) *parser.Value {
 	return value
 }
 
+func (i *Interpreter) VisitAssign(expr *parser.Assign) *parser.Value {
+	value := expr.Expr.Accept(i)
+	i.environment.Assign(expr.Name, value)
+	return value
+}
+
 // Implement StmtVisitor
 func (i *Interpreter) VisitExpressionStmt(stmt *parser.ExpressionStmt) *parser.Value {
 	return stmt.Expr.Accept(i)

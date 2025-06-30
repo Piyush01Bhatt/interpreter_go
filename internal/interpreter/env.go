@@ -21,3 +21,10 @@ func (e *Env) Define(name string, value *parser.Value) {
 func (e *Env) Get(name string) *parser.Value {
 	return e.values[name]
 }
+
+func (e *Env) Assign(name string, value *parser.Value) {
+	if _, ok := e.values[name]; !ok {
+		panic("Undefined variable '" + name + "'.")
+	}
+	e.values[name] = value
+}

@@ -15,7 +15,8 @@ import (
 // varDecl        → "var" IDENTIFIER ( "=" expression )? ";"
 // statement      → exprStmt | ifStmt | printStmt | returnStmt | whileStmt | block
 // exprStmt       → expression ";"
-// expression     → equality
+// expression     → assignment
+// assignment     → IDENTIFIER "=" assignment | equality
 // equality       → comparison ( ( "!=" | "==" ) comparison )*
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )*
 // term           → factor ( ( "-" | "+" ) factor )*
@@ -110,10 +111,26 @@ func (p *Parser) ParseExpression() Expr {
 	return p.expression()
 }
 
-// expression -> equality
+// expression -> assignment
 
 func (p *Parser) expression() Expr {
-	return p.equality()
+	return p.assignment()
+}
+
+// assignment  → IDENTIFIER "=" assignment | equality
+func (p *Parser) assignment() Expr {
+	expr := p.equality()
+	if p.match(ls.EQUAL) {
+		value := p.assignment()
+		if _, ok := expr.(*Variable); ok {
+			return &Assign{
+				Name: expr.(*Variable).Name,
+				Expr: value,
+			}
+		}
+		panic("Invalid assignment")
+	}
+	return expr
 }
 
 // equality  → comparison ( ( "!=" | "==" ) comparison )*
