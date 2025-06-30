@@ -14,6 +14,7 @@ const (
 	UNARY
 	LITERAL
 	VARIABLE
+	ASSIGN
 )
 
 type Value struct {
@@ -132,6 +133,7 @@ type ExprVisitor interface {
 	VisitUnary(unary *Unary) *Value
 	VisitLiteral(literal *Literal) *Value
 	VisitVariable(variable *Variable) *Value
+	VisitAssign(assign *Assign) *Value
 }
 
 type Binary struct {
@@ -199,4 +201,21 @@ func (v *Variable) String() string {
 
 func (v *Variable) Accept(visitor ExprVisitor) *Value {
 	return visitor.VisitVariable(v)
+}
+
+type Assign struct {
+	Name string
+	Expr Expr
+}
+
+func (a *Assign) Type() ExprType {
+	return ASSIGN
+}
+
+func (a *Assign) String() string {
+	return fmt.Sprintf("%s = %s", a.Name, a.Expr)
+}
+
+func (a *Assign) Accept(visitor ExprVisitor) *Value {
+	return visitor.VisitAssign(a)
 }
